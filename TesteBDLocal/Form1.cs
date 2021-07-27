@@ -22,55 +22,63 @@ namespace TesteBDLocal
 
         private void button1_Click(object sender, EventArgs e)
         {
-            string Prompt = "Informe o nome do Banco de Dados a ser criado.Ex: Teste.sdf";
-            string Resultado = Interaction.InputBox(Prompt, "CaminhoBD", @"C:\Users\Public\Documents\DB.sdf", 650, 350);
-            /* verifica se o resultado é uma string vazia o que indica que foi cancelado. */
-            if (Resultado != "")
+            string connectionString;
+            string nomeArquivoBD = @"C:\Users\Public\Documents\DB.sdf";
+            string senha = "";
+            connectionString = string.Format("DataSource=\"{0}\"; Password='{1}'", nomeArquivoBD, senha);
+            SqlCeConnection cn = new SqlCeConnection(connectionString);
+            if (cn.State == ConnectionState.Closed)
             {
-                if (!Resultado.Contains(".sdf"))
-                {
-                    MessageBox.Show("Informe a extensão .sdf no arquivo...");
-                    return;
-                }
-                try
-                {
-                    string connectionString;
-                    string nomeArquivoBD = Resultado;
-                    string senha = "";
-
-                    if (File.Exists(nomeArquivoBD))
-                    {
-                        if (MessageBox.Show("O arquivo já existe !. Deseja excluir e criar novamente ? ", "Excluir", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
-                        {
-                            File.Delete(nomeArquivoBD);
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
-
-                    connectionString = string.Format("DataSource=\"{0}\"; Password='{1}'", nomeArquivoBD, senha);
-
-                    if (MessageBox.Show("Será criado arquivo " + connectionString + " Confirma ? ", "Criar", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
-                    {
-                        SqlCeEngine SqlEng = new SqlCeEngine(connectionString);
-                        SqlEng.CreateDatabase();
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
+                cn.Open();
             }
-            else
+
+            SqlCeCommand cmd;
+            string sql = "insert into  tabelaBD"
+                        + "(nome) "
+                        + "values (@nome)";
+
+            cmd = new SqlCeCommand(sql, cn);
+            cmd.Parameters.AddWithValue("@nome", textBox1.Text);
+            cmd.ExecuteNonQuery();
+            cn.Close();
+        }
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            string connectionString;
+            string nomeArquivoBD = @"C:\Users\Public\Documents\DB.sdf";
+            string senha = "";
+            connectionString = string.Format("DataSource=\"{0}\"; Password='{1}'", nomeArquivoBD, senha);
+            if (!File.Exists(nomeArquivoBD))
             {
-                MessageBox.Show("A operação foi cancelada...");
+                SqlCeEngine SqlEng = new SqlCeEngine(connectionString);
+                SqlEng.CreateDatabase();
+                connectionString = string.Format("DataSource=\"{0}\"; Password='{1}'", nomeArquivoBD, senha);
+                SqlCeConnection cn = new SqlCeConnection(connectionString);
+                cn.Open();
+                SqlCeCommand cmd;
+                string sql = "create table " + "tabelaBD" + "("
+                           + "Nome nvarchar (60) not null)";
+                cmd = new SqlCeCommand(sql, cn);
+                cmd.ExecuteNonQuery();
+                cn.Close();
             }
         }
-    }    
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            string connectionString;
+            string nomeArquivoBD = @"C:\Users\Public\Documents\DB.sdf";
+            string senha = "";
+            connectionString = string.Format("DataSource=\"{0}\"; Password='{1}'", nomeArquivoBD, senha);
+            SqlCeConnection cn = new SqlCeConnection(connectionString);
+            if (cn.State == ConnectionState.Closed)
+            {
+                cn.Open();
+            }
+            SqlCeCommand cmd = new SqlCeCommand("tabelaBD", cn);
+            cmd.CommandType = CommandType.TableDirect;
+            SqlCeResultSet rs = cmd.ExecuteResultSet(ResultSetOptions.Scrollable);
+            dataGridView1.DataSource = rs;
+        }
+    }
 }
